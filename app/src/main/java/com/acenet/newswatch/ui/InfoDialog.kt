@@ -33,19 +33,19 @@ fun InfoDialog(onDismiss: () -> Unit) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher),
                     contentDescription = "App Logo",
-                    modifier = Modifier.size(150.dp)
+                    modifier = Modifier.size(200.dp)
                 )
-                Text(
-                    text = "App Version 1.0.1",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "NewsWatch is a modern Android application that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Latest, Tech, Movie, and Sports news in one place.",
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    color = Color.DarkGray
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "App Version 1.0.1",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(

@@ -12,7 +12,7 @@ NewsWatch is a modern Android application built with Jetpack Compose that aggreg
 
 ## Screenshots
 
-*(Add screenshots here)*
+![App Interface](newswatch.JPEG)
 
 ## Tech Stack
 
