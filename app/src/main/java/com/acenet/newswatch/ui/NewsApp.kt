@@ -66,7 +66,8 @@ fun MainScreen(viewModel: NewsViewModel) {
     // Define tabs
     val tabs = listOf(
         Triple("Local News", NewsRepository.NewsCategory.LOCAL, Icons.Default.Home),
-        Triple("Foreign News", NewsRepository.NewsCategory.FOREIGN, Icons.Default.Public),
+        Triple("Tech News", NewsRepository.NewsCategory.TECH, Icons.Default.PlayArrow),
+        Triple("Movie News", NewsRepository.NewsCategory.MOVIE, Icons.Default.Movie),
         Triple("Sports News", NewsRepository.NewsCategory.SPORT, Icons.Default.SportsSoccer)
     )
 

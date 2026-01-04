@@ -33,16 +33,10 @@ fun InfoDialog(onDismiss: () -> Unit) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher),
                     contentDescription = "App Logo",
-                    modifier = Modifier.size(120.dp)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "NewsWatch",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    modifier = Modifier.size(150.dp)
                 )
                 Text(
-                    text = "App Version 1.0",
+                    text = "App Version 1.0.1",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
@@ -60,6 +54,10 @@ fun InfoDialog(onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Phone: +2348161836558",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Email: ope_adedotun@live.com",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(24.dp))

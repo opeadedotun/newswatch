@@ -57,8 +57,22 @@ class NewsRepository {
         "Goal.com" to "https://www.goal.com/feeds/en-ng/news"
     )
 
+    private val techSources = mapOf(
+        "TechCrunch" to "https://techcrunch.com/feed/",
+        "The Verge" to "https://www.theverge.com/rss/index.xml",
+        "Wired" to "https://www.wired.com/feed/rss",
+        "Engadget" to "https://www.engadget.com/rss.xml"
+    )
+
+    private val movieSources = mapOf(
+        "Variety" to "https://variety.com/feed/",
+        "Hollywood Reporter" to "https://www.hollywoodreporter.com/feed/",
+        "Vanguard Entertainment" to "https://www.vanguardngr.com/category/entertainment/feed/",
+        "Premium Times Entertainment" to "https://www.premiumtimesng.com/category/entertainment/feed/"
+    )
+
     enum class NewsCategory {
-        LOCAL, FOREIGN, SPORT
+        LOCAL, FOREIGN, SPORT, TECH, MOVIE
     }
 
     suspend fun getLatestNews(category: NewsCategory): List<NewsItem> = withContext(Dispatchers.IO) {
@@ -66,6 +80,8 @@ class NewsRepository {
             NewsCategory.LOCAL -> localSources
             NewsCategory.FOREIGN -> foreignSources
             NewsCategory.SPORT -> sportSources
+            NewsCategory.TECH -> techSources
+            NewsCategory.MOVIE -> movieSources
         }
 
 
