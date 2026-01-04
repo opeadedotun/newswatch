@@ -1,11 +1,11 @@
 # NewsWatch
 
-NewsWatch is a modern Android application built with Jetpack Compose that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Local, Tech, Movie, and Sports news in one place.
+NewsWatch is a modern Android application built with Jetpack Compose that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Latest, Tech, Movie, and Sports news in one place.
 
 ## Features
 
-- **Categorized News**: Browse through Local, Tech, Movie, and Sports news.
-- **Top Headlines**: Get the latest 10 headlines from multiple reliable sources for each category.
+- **Categorized News**: Browse through Latest, Tech, Movie, and Sports news.
+- **Top Headlines**: Get the latest 10 headlines from multiple reliable sources for each category (Latest news features a 80/20 mix of Nigerian and Foreign news).
 - **In-App Browsing**: Read full articles directly within the app using an integrated WebView.
 - **Modern UI**: Built with Jetpack Compose for a smooth and responsive user experience.
 - **Dark Mode Support**: Seamlessly adapts to your system theme.

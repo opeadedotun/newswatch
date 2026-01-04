@@ -40,6 +40,13 @@ fun InfoDialog(onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "NewsWatch is a modern Android application that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Latest, Tech, Movie, and Sports news in one place.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    color = Color.DarkGray
+                )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = "Powered by:",

@@ -3,6 +3,7 @@ package com.acenet.newswatch.data
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.simplexml.SimpleXmlConverterFactory
@@ -72,22 +73,34 @@ class NewsRepository {
     )
 
     enum class NewsCategory {
-        LOCAL, FOREIGN, SPORT, TECH, MOVIE
+        LATEST, FOREIGN, SPORT, TECH, MOVIE
     }
 
     suspend fun getLatestNews(category: NewsCategory): List<NewsItem> = withContext(Dispatchers.IO) {
+        if (category == NewsCategory.LATEST) {
+            val localNews = fetchCategoryNews(localSources)
+            val foreignNews = fetchCategoryNews(foreignSources)
+            
+            // Take 8 local and 2 foreign for 80% ratio
+            return@withContext (localNews.take(8) + foreignNews.take(2))
+                .sortedByDescending { parseDate(it.pubDate) }
+        }
+
         val selectedSources = when (category) {
-            NewsCategory.LOCAL -> localSources
+            NewsCategory.LATEST -> localSources // Should not hit this due to if above
             NewsCategory.FOREIGN -> foreignSources
             NewsCategory.SPORT -> sportSources
             NewsCategory.TECH -> techSources
             NewsCategory.MOVIE -> movieSources
         }
 
+        fetchCategoryNews(selectedSources)
+    }
 
+    private suspend fun fetchCategoryNews(sources: Map<String, String>): List<NewsItem> = coroutineScope {
         try {
             // Fetch all feeds in parallel
-            val deferreds = selectedSources.map { (name, url) ->
+            val deferreds = sources.map { (name, url) ->
                 async {
                     try {
                         val feed = service.getFeed(url)
@@ -110,15 +123,7 @@ class NewsRepository {
             }
 
             val allNews = deferreds.awaitAll().flatten()
-
-            // Sort by date and take top 10
-            // Date parsing can be tricky with different formats, but RSS usually follows RFC 822
-            // For robustness, we will try to parse, or just rely on the order if they are pulled recently.
-            // But combining feeds requires sorting.
-            
-            val sortedNews = allNews.sortedByDescending { parseDate(it.pubDate) }
-            
-            sortedNews.take(10)
+            allNews.sortedByDescending { parseDate(it.pubDate) }.take(10)
 
         } catch (e: Exception) {
             e.printStackTrace()

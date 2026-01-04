@@ -12,9 +12,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SportsSoccer
@@ -65,8 +67,8 @@ fun MainScreen(viewModel: NewsViewModel) {
     
     // Define tabs
     val tabs = listOf(
-        Triple("Local News", NewsRepository.NewsCategory.LOCAL, Icons.Default.Home),
-        Triple("Tech News", NewsRepository.NewsCategory.TECH, Icons.Default.PlayArrow),
+        Triple("Latest News", NewsRepository.NewsCategory.LATEST, Icons.Default.Newspaper),
+        Triple("Tech News", NewsRepository.NewsCategory.TECH, Icons.Default.Computer),
         Triple("Movie News", NewsRepository.NewsCategory.MOVIE, Icons.Default.Movie),
         Triple("Sports News", NewsRepository.NewsCategory.SPORT, Icons.Default.SportsSoccer)
     )

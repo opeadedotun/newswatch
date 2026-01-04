@@ -24,7 +24,7 @@ class NewsViewModel : ViewModel() {
     private val _uiState = MutableStateFlow<NewsUiState>(NewsUiState.Loading)
     val uiState: StateFlow<NewsUiState> = _uiState.asStateFlow()
     
-    private val _selectedCategory = MutableStateFlow(NewsRepository.NewsCategory.LOCAL)
+    private val _selectedCategory = MutableStateFlow(NewsRepository.NewsCategory.LATEST)
     val selectedCategory: StateFlow<NewsRepository.NewsCategory> = _selectedCategory.asStateFlow()
     
     // For keeping track of the last update time, potentially
