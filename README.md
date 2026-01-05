@@ -9,8 +9,8 @@ Get the latest version of NewsWatch directly on your Android device:
 ## Screenshots
 
 <p align="center">
-  <img src="newswatch2.jpeg" width="250" alt="News Feed - Dark Mode">
-  <img src="newswatch1.jpeg" width="250" alt="News Feed - Light Mode">
+  <img src="newswatch2.jpg" width="200" alt="News Feed - Dark Mode">
+  <img src="newswatch1.jpg" width="200" alt="News Feed - Light Mode">
 </p>
 
 ## Features
