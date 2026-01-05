@@ -11,6 +11,13 @@ val TextWhite = Color(0xFFEEEEEE)
 val TextGrey = Color(0xFFAAAAAA)
 val BorderColor = Color(0xFF424242)
 
+// Light Mode Colors
+val BackgroundLight = Color(0xFFF8F9FA)
+val SurfaceLight = Color(0xFFFFFFFF)
+val TextBlack = Color(0xFF212529)
+val TextGreyLight = Color(0xFF6C757D)
+val BorderColorLight = Color(0xFFDEE2E6)
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

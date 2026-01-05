@@ -11,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -31,14 +32,21 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryRed,
     secondary = PrimaryRedDark,
-    tertiary = Pink80
-    // Keep default light values for others for now, but we focus on Dark/Modern
+    tertiary = Pink80,
+    background = BackgroundLight,
+    surface = SurfaceLight,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onTertiary = Color.White,
+    onBackground = TextBlack,
+    onSurface = TextBlack,
+    outlineVariant = BorderColorLight
 )
 
 @Composable
 fun NewsWatchTheme(
-    darkTheme: Boolean = true, // Force dark for "Modern" look default
-    dynamicColor: Boolean = false, // Disable dynamic color to enforce our branding
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

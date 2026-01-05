@@ -13,14 +13,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Newspaper
-import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -41,6 +43,7 @@ import coil.compose.AsyncImage
 import com.acenet.newswatch.R
 import com.acenet.newswatch.data.NewsItem
 import com.acenet.newswatch.data.NewsRepository
+import com.acenet.newswatch.ui.theme.NewsWatchTheme
 import com.acenet.newswatch.ui.theme.PrimaryRed
 import com.acenet.newswatch.viewmodel.NewsUiState
 import com.acenet.newswatch.viewmodel.NewsViewModel
@@ -48,12 +51,15 @@ import com.acenet.newswatch.viewmodel.NewsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsApp(viewModel: NewsViewModel = viewModel()) {
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
     var showSplash by remember { mutableStateOf(true) }
 
-    if (showSplash) {
-        SplashScreen(onTimeout = { showSplash = false })
-    } else {
-        MainScreen(viewModel)
+    NewsWatchTheme(darkTheme = isDarkMode) {
+        if (showSplash) {
+            SplashScreen(onTimeout = { showSplash = false })
+        } else {
+            MainScreen(viewModel)
+        }
     }
 }
 
@@ -61,15 +67,21 @@ fun NewsApp(viewModel: NewsViewModel = viewModel()) {
 @Composable
 fun MainScreen(viewModel: NewsViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val filteredNews by viewModel.filteredNews.collectAsState(initial = emptyList())
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val bookmarkedNews by viewModel.bookmarkedNews.collectAsState()
+    
     var selectedNewsItem by remember { mutableStateOf<NewsItem?>(null) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var showBookmarks by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
     
     // Define tabs
     val tabs = listOf(
-        Triple("Latest News", NewsRepository.NewsCategory.LATEST, Icons.Default.Newspaper),
+        Triple("World News", NewsRepository.NewsCategory.WORLD, Icons.Default.Newspaper),
         Triple("Tech News", NewsRepository.NewsCategory.TECH, Icons.Default.Computer),
-        Triple("Movie News", NewsRepository.NewsCategory.MOVIE, Icons.Default.Movie),
+        Triple("Entertainment", NewsRepository.NewsCategory.ENTERTAINMENT, Icons.Default.PlayArrow),
         Triple("Sports News", NewsRepository.NewsCategory.SPORT, Icons.Default.SportsSoccer)
     )
 
@@ -83,20 +95,56 @@ fun MainScreen(viewModel: NewsViewModel) {
                 CenterAlignedTopAppBar(
                     title = {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                            // Logo replacing the text "NEWSWATCH"
                             Image(
                                 painter = painterResource(id = R.drawable.ic_launcher),
                                 contentDescription = "Logo",
                                 modifier = Modifier
-                                    .height(60.dp)
-                                    .padding(vertical = 8.dp),
+                                    .height(45.dp)
+                                    .padding(top = 8.dp),
                                 contentScale = ContentScale.Fit
+                            )
+                            Text(
+                                text = "All the headlines. One place",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (viewModel.isDarkMode.value) Color.White else Color.Black,
+                                modifier = Modifier.padding(bottom = 4.dp)
                             )
                         }
                     },
                     actions = {
-                        IconButton(onClick = { showInfoDialog = true }) {
-                            Icon(Icons.Default.Info, contentDescription = "App Info")
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Bookmarks") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showBookmarks = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Star, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(if (viewModel.isDarkMode.value) "Light Mode" else "Dark Mode") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        viewModel.toggleTheme()
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("About") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        showInfoDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
+                                )
+                            }
                         }
                     },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -106,14 +154,17 @@ fun MainScreen(viewModel: NewsViewModel) {
             }
         },
         bottomBar = {
-            if (selectedNewsItem == null) {
+            if (selectedNewsItem == null && !showBookmarks) {
                 NavigationBar {
                     tabs.forEach { (label, category, icon) ->
                         NavigationBarItem(
                             icon = { Icon(icon, contentDescription = label) },
-                            label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 10.sp) },
                             selected = selectedCategory == category,
-                            onClick = { viewModel.onCategorySelected(category) }
+                            onClick = { 
+                                showBookmarks = false
+                                viewModel.onCategorySelected(category) 
+                            }
                         )
                     }
                 }
@@ -122,10 +173,49 @@ fun MainScreen(viewModel: NewsViewModel) {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             if (selectedNewsItem == null) {
-                NewsListScreen(
-                    uiState = uiState,
-                    onNewsClick = { selectedNewsItem = it }
-                )
+                if (showBookmarks) {
+                    BackHandler { showBookmarks = false }
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Back", color = PrimaryRed, modifier = Modifier.clickable { showBookmarks = false })
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(text = "Bookmarks", style = MaterialTheme.typography.titleLarge)
+                        }
+                        if (bookmarkedNews.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No bookmarks yet.")
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(bookmarkedNews) { newsItem ->
+                                    NewsItemCard(
+                                        newsItem = newsItem, 
+                                        isBookmarked = true,
+                                        onBookmarkClick = { viewModel.toggleBookmark(newsItem) },
+                                        onClick = { selectedNewsItem = newsItem }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    NewsListScreen(
+                        uiState = uiState,
+                        news = filteredNews,
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
+                        onNewsClick = { selectedNewsItem = it },
+                        onBookmarkClick = { viewModel.toggleBookmark(it) },
+                        isBookmarked = { viewModel.isBookmarked(it) }
+                    )
+                }
             } else {
                 NewsDetailScreen(
                     newsItem = selectedNewsItem!!,
@@ -136,32 +226,76 @@ fun MainScreen(viewModel: NewsViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsListScreen(
     uiState: NewsUiState,
-    onNewsClick: (NewsItem) -> Unit
+    news: List<NewsItem>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onNewsClick: (NewsItem) -> Unit,
+    onBookmarkClick: (NewsItem) -> Unit,
+    isBookmarked: (NewsItem) -> Boolean
 ) {
-    when (uiState) {
-        is NewsUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryRed)
-            }
-        }
-        is NewsUiState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = uiState.message, color = Color.Red, textAlign = TextAlign.Center)
+    Column {
+        TextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .height(50.dp),
+            placeholder = { 
+                Text(
+                    text = "Search...", 
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 0.dp)
+                ) 
+            },
+            leadingIcon = { 
+                Icon(
+                    imageVector = Icons.Default.Search, 
+                    contentDescription = null, 
+                    modifier = Modifier.size(16.dp)
+                ) 
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(25.dp),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+            colors = TextFieldDefaults.textFieldColors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        )
+
+        when (uiState) {
+            is NewsUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PrimaryRed)
                 }
             }
-        }
-        is NewsUiState.Success -> {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
-            ) {
-                items(uiState.news) { newsItem ->
-                    NewsItemCard(newsItem = newsItem, onClick = { onNewsClick(newsItem) })
+            is NewsUiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = uiState.message, color = Color.Red, textAlign = TextAlign.Center)
+                    }
+                }
+            }
+            is NewsUiState.Success -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(news) { newsItem ->
+                        NewsItemCard(
+                            newsItem = newsItem, 
+                            isBookmarked = isBookmarked(newsItem),
+                            onBookmarkClick = { onBookmarkClick(newsItem) },
+                            onClick = { onNewsClick(newsItem) }
+                        )
+                    }
                 }
             }
         }
@@ -169,7 +303,12 @@ fun NewsListScreen(
 }
 
 @Composable
-fun NewsItemCard(newsItem: NewsItem, onClick: () -> Unit) {
+fun NewsItemCard(
+    newsItem: NewsItem, 
+    isBookmarked: Boolean,
+    onBookmarkClick: () -> Unit,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(8.dp),
@@ -177,7 +316,6 @@ fun NewsItemCard(newsItem: NewsItem, onClick: () -> Unit) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-            // Text only card as requested
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = newsItem.title,
@@ -191,6 +329,14 @@ fun NewsItemCard(newsItem: NewsItem, onClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "• ${parseDateForDisplay(newsItem.pubDate)}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
+            }
+            IconButton(onClick = onBookmarkClick, modifier = Modifier.size(24.dp)) {
+                Icon(
+                    imageVector = if (isBookmarked) Icons.Default.Star else Icons.Default.StarBorder,
+                    contentDescription = "Bookmark",
+                    tint = if (isBookmarked) Color.Yellow else Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
     }

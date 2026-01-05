@@ -64,6 +64,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("io.coil-kt:coil-compose:2.5.0")
     
+    // Gson for bookmarks persistence
+    implementation("com.google.code.gson:gson:2.10.1")
+    
     // Retrofit & XML Parser
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-simplexml:2.9.0") {

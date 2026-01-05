@@ -1,18 +1,27 @@
 # NewsWatch
 
-NewsWatch is a modern Android application built with Jetpack Compose that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Latest, Tech, Movie, and Sports news in one place.
+NewsWatch is a premium Android application built with Jetpack Compose that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with World News, Tech, Entertainment, and soccer-Centric Sports in one place.
 
-## Features
-
-- **Categorized News**: Browse through Latest, Tech, Movie, and Sports news.
-- **Top Headlines**: Get the latest 10 headlines from multiple reliable sources for each category (Latest news features a 80/20 mix of Nigerian and Foreign news).
-- **In-App Browsing**: Read full articles directly within the app using an integrated WebView.
-- **Modern UI**: Built with Jetpack Compose for a smooth and responsive user experience.
-- **Dark Mode Support**: Seamlessly adapts to your system theme.
+## 📥 Download App
+Get the latest version of NewsWatch directly on your Android device:
+**[Download NewsWatch APK](https://upload-apk.com/JtcYNqF7u86gd36)**
 
 ## Screenshots
 
-<img src="newswatch.jpeg" width="250" alt="App Interface">
+<p align="center">
+  <img src="newswatch2.jpeg" width="250" alt="News Feed - Dark Mode">
+  <img src="newswatch1.jpeg" width="250" alt="News Feed - Light Mode">
+</p>
+
+## Features
+
+- **Strictly Categorized News**: Browse through **World News**, **Tech**, **Entertainment**, and **Sports**.
+- **soccer-Centric Sports**: Dedicated coverage of soccer, including the Nigerian League (NPFL), Super Eagles, AFCON, Champions League, Premier League, and major European leagues.
+- **Powerful Search**: Search for news by headline or organization source directly from the main feed.
+- **Persistent Bookmarks**: Bookmark your favorite headlines using the star icon. Your bookmarks stay saved even if the news is no longer featured in the main feed (Limit: 20 headlines).
+- **Professional Theme Support**: Modern **Dark Mode** (Default) and a clean, professional **Light Mode** that saves your preference.
+- **In-App Browsing**: Read full articles directly within the app using a sleek internal WebView.
+- **Optimized Data Fetching**: Smart filtering ensures only high-quality, relevant headlines are displayed for each category.
 
 ## Tech Stack
 
@@ -21,6 +30,7 @@ NewsWatch is a modern Android application built with Jetpack Compose that aggreg
 - **Networking**: [Retrofit](https://square.github.io/retrofit/)
 - **XML Parsing**: [SimpleXML](http://simple.sourceforge.net/)
 - **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
+- **Local Storage**: SharedPreferences & Gson
 - **Concurrency**: [Kotlin Coroutines](https://kotlinlang.org/docs/coroutines-overview.html)
 
 ## Getting Started
@@ -45,6 +55,7 @@ NewsWatch is a modern Android application built with Jetpack Compose that aggreg
 
 - **Version**: 1.0.1
 - **Developer**: Acenet Technology
+- **Slogan**: *All the headlines. One place*
 
 ## Contact
 

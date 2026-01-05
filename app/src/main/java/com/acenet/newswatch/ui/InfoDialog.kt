@@ -12,7 +12,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.acenet.newswatch.ui.theme.BackgroundDark
+import com.acenet.newswatch.ui.theme.SurfaceDark
+import com.acenet.newswatch.ui.theme.TextWhite
 import com.acenet.newswatch.R
 
 @Composable
@@ -20,7 +24,7 @@ fun InfoDialog(onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            colors = CardDefaults.cardColors(containerColor = SurfaceDark),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -36,10 +40,17 @@ fun InfoDialog(onDismiss: () -> Unit) {
                     modifier = Modifier.size(200.dp)
                 )
                 Text(
-                    text = "NewsWatch is a modern Android application that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with Latest, Tech, Movie, and Sports news in one place.",
+                    text = "All the headlines. One place",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextWhite.copy(alpha = 0.8f),
+                    fontSize = 10.sp,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    text = "NewsWatch is a modern Android application that aggregates the latest news from various sources in Nigeria and around the world. Stay updated with World, Tech, Entertainment, and Sports news in one place.",
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    color = Color.White
+                    color = TextWhite
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -56,16 +67,19 @@ fun InfoDialog(onDismiss: () -> Unit) {
                 Text(
                     text = "Acenet Technology",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextWhite
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Phone: +2348161836558",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextWhite
                 )
                 Text(
                     text = "Email: ope_adedotun@live.com",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextWhite
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(onClick = onDismiss) {

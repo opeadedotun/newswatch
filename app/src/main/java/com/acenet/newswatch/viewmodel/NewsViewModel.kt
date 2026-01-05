@@ -1,6 +1,5 @@
 package com.acenet.newswatch.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.acenet.newswatch.data.NewsItem
 import com.acenet.newswatch.data.NewsRepository
@@ -8,8 +7,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 sealed class NewsUiState {
     object Loading : NewsUiState()
@@ -17,18 +22,43 @@ sealed class NewsUiState {
     data class Error(val message: String) : NewsUiState()
 }
 
-class NewsViewModel : ViewModel() {
+class NewsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = NewsRepository()
+    private val sharedPrefs = application.getSharedPreferences("newswatch_prefs", Context.MODE_PRIVATE)
+    private val gson = Gson()
     
     private val _uiState = MutableStateFlow<NewsUiState>(NewsUiState.Loading)
     val uiState: StateFlow<NewsUiState> = _uiState.asStateFlow()
     
-    private val _selectedCategory = MutableStateFlow(NewsRepository.NewsCategory.LATEST)
+    private val _selectedCategory = MutableStateFlow(NewsRepository.NewsCategory.WORLD)
     val selectedCategory: StateFlow<NewsRepository.NewsCategory> = _selectedCategory.asStateFlow()
-    
-    // For keeping track of the last update time, potentially
-    private var lastUpdatedTime = System.currentTimeMillis()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _isDarkMode = MutableStateFlow(sharedPrefs.getBoolean("dark_mode", true))
+    val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+    private val _bookmarkedNews = MutableStateFlow<List<NewsItem>>(loadBookmarks())
+    val bookmarkedNews: StateFlow<List<NewsItem>> = _bookmarkedNews.asStateFlow()
+
+    // Combined search results
+    val filteredNews = combine(uiState, searchQuery) { state, query ->
+        if (state is NewsUiState.Success) {
+            if (query.isEmpty()) {
+                state.news
+            } else {
+                state.news.filter { item ->
+                    item.title.contains(query, ignoreCase = true) ||
+                    item.sourceName.contains(query, ignoreCase = true) ||
+                    item.description.contains(query, ignoreCase = true)
+                }
+            }
+        } else {
+            emptyList()
+        }
+    }
 
     init {
         startAutoRefresh()
@@ -62,16 +92,58 @@ class NewsViewModel : ViewModel() {
             // Let's show loading to give feedback that content is changing
             _uiState.value = NewsUiState.Loading
             
-            val items = repository.getLatestNews(_selectedCategory.value)
+            val items = repository.getNewsByCategory(_selectedCategory.value)
             if (items.isNotEmpty()) {
                 _uiState.value = NewsUiState.Success(items)
-                lastUpdatedTime = System.currentTimeMillis()
             } else {
                 // Keep showing old data if fetch fails, but if empty initially show error
                 if (_uiState.value is NewsUiState.Loading) {
                     _uiState.value = NewsUiState.Error("Failed to load news. Check internet connection.")
                 }
             }
+        }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun toggleTheme() {
+        _isDarkMode.value = !_isDarkMode.value
+        sharedPrefs.edit().putBoolean("dark_mode", _isDarkMode.value).apply()
+    }
+
+    fun toggleBookmark(newsItem: NewsItem) {
+        val current = _bookmarkedNews.value.toMutableList()
+        val existing = current.find { it.link == newsItem.link }
+        if (existing != null) {
+            current.remove(existing)
+        } else {
+            current.add(0, newsItem)
+            if (current.size > 20) {
+                current.removeAt(current.size - 1)
+            }
+        }
+        _bookmarkedNews.value = current
+        saveBookmarks(current)
+    }
+
+    fun isBookmarked(newsItem: NewsItem): Boolean {
+        return _bookmarkedNews.value.any { it.link == newsItem.link }
+    }
+
+    private fun saveBookmarks(bookmarks: List<NewsItem>) {
+        val json = gson.toJson(bookmarks)
+        sharedPrefs.edit().putString("bookmarks", json).apply()
+    }
+
+    private fun loadBookmarks(): List<NewsItem> {
+        val json = sharedPrefs.getString("bookmarks", null) ?: return emptyList()
+        val type = object : TypeToken<List<NewsItem>>() {}.type
+        return try {
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }

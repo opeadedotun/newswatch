@@ -53,51 +53,98 @@ class NewsRepository {
     )
 
     private val sportSources = mapOf(
-        "Pulse Sports" to "https://www.pulsesports.ng/feeds/rss",
-        "Complete Sports" to "https://www.completesports.com/feed",
-        "Goal.com" to "https://www.goal.com/feeds/en-ng/news"
+        "Complete Sports (NG)" to "https://www.completesports.com/feed",
+        "BBC Football" to "https://feeds.bbci.co.uk/sport/football/rss.xml",
+        "Sky Sports Football" to "https://www.skysports.com/rss/11095",
+        "Goal" to "https://www.goal.com/feeds/en/news"
     )
 
     private val techSources = mapOf(
         "TechCrunch" to "https://techcrunch.com/feed/",
         "The Verge" to "https://www.theverge.com/rss/index.xml",
         "Wired" to "https://www.wired.com/feed/rss",
-        "Engadget" to "https://www.engadget.com/rss.xml"
+        "Vanguard Tech" to "https://www.vanguardngr.com/category/technology/feed/"
     )
 
     private val movieSources = mapOf(
         "Variety" to "https://variety.com/feed/",
         "Hollywood Reporter" to "https://www.hollywoodreporter.com/feed/",
         "Vanguard Entertainment" to "https://www.vanguardngr.com/category/entertainment/feed/",
-        "Premium Times Entertainment" to "https://www.premiumtimesng.com/category/entertainment/feed/"
+        "Punch Entertainment" to "https://punchng.com/topics/entertainment/feed/"
     )
 
     enum class NewsCategory {
-        LATEST, FOREIGN, SPORT, TECH, MOVIE
+        WORLD, FOREIGN, SPORT, TECH, ENTERTAINMENT
     }
 
-    suspend fun getLatestNews(category: NewsCategory): List<NewsItem> = withContext(Dispatchers.IO) {
-        if (category == NewsCategory.LATEST) {
-            val localNews = fetchCategoryNews(localSources)
-            val foreignNews = fetchCategoryNews(foreignSources)
-            
-            // Take 8 local and 2 foreign for 80% ratio
-            return@withContext (localNews.take(8) + foreignNews.take(2))
-                .sortedByDescending { parseDate(it.pubDate) }
+    suspend fun getNewsByCategory(category: NewsCategory): List<NewsItem> = withContext(Dispatchers.IO) {
+        val rawItems = when (category) {
+            NewsCategory.WORLD -> {
+                val localNews = fetchCategoryNews(localSources, limit = 60)
+                val foreignNews = fetchCategoryNews(foreignSources, limit = 30)
+                val filteredLocal = filterWorldNews(localNews)
+                val filteredForeign = filterWorldNews(foreignNews)
+                (filteredLocal.take(14) + filteredForeign.take(6))
+            }
+            NewsCategory.FOREIGN -> fetchCategoryNews(foreignSources, limit = 20)
+            NewsCategory.SPORT -> {
+                val news = fetchCategoryNews(sportSources, limit = 100)
+                filterByCategory(news, NewsCategory.SPORT)
+            }
+            NewsCategory.TECH -> {
+                val news = fetchCategoryNews(techSources, limit = 100)
+                filterByCategory(news, NewsCategory.TECH)
+            }
+            NewsCategory.ENTERTAINMENT -> {
+                val news = fetchCategoryNews(movieSources, limit = 100)
+                filterByCategory(news, NewsCategory.ENTERTAINMENT)
+            }
         }
 
-        val selectedSources = when (category) {
-            NewsCategory.LATEST -> localSources // Should not hit this due to if above
-            NewsCategory.FOREIGN -> foreignSources
-            NewsCategory.SPORT -> sportSources
-            NewsCategory.TECH -> techSources
-            NewsCategory.MOVIE -> movieSources
-        }
-
-        fetchCategoryNews(selectedSources)
+        return@withContext rawItems.sortedByDescending { parseDate(it.pubDate) }.take(20)
     }
 
-    private suspend fun fetchCategoryNews(sources: Map<String, String>): List<NewsItem> = coroutineScope {
+    private fun filterWorldNews(news: List<NewsItem>): List<NewsItem> {
+        val excludeKeywords = listOf(
+            "tech", "technology", "software", "app", "gadget", "smartphone", "iphone", "android",
+            "sport", "football", "soccer", "basketball", "tennis", "golf", "match", "league", "cup",
+            "movie", "entertainment", "cinema", "celebrity", "music", "song", "album", "artist", "actor", "actress", "hollywood", "nollywood", "box office",
+            "gaming", "nintendo", "playstation", "xbox"
+        )
+        return news.filter { item ->
+            val content = (item.title + " " + item.description).lowercase()
+            excludeKeywords.none { content.contains(it) }
+        }
+    }
+
+    private fun filterByCategory(news: List<NewsItem>, category: NewsCategory): List<NewsItem> {
+        val includeKeywords = when (category) {
+            NewsCategory.SPORT -> listOf(
+                "football", "soccer", "league", "club", "premier league", "champions league", "afcon", 
+                "super eagles", "npfl", "nigerian league", "nations cup", "world cup", "coach", "striker",
+                "manchester", "chelsea", "liverpool", "arsenal", "real madrid", "barcelona", "bayern",
+                "psg", "italy", "spain", "germany", "france", "ucl", "uel", "transfers"
+            )
+            NewsCategory.TECH -> listOf(
+                "tech", "technology", "ai", "artificial intelligence", "software", "hardware", 
+                "app", "startup", "silicon", "semiconductor", "robot", "computing", "digital",
+                "smartphone", "mobile", "internet", "google", "apple", "microsoft", "meta", "tesla"
+            )
+            NewsCategory.ENTERTAINMENT -> listOf(
+                "movie", "film", "cinema", "entertainment", "celebrity", "music", "song", "album",
+                "artist", "singer", "actor", "actress", "hollywood", "nollywood", "showbiz", "award",
+                "series", "streaming", "netflix", "theatre", "tv"
+            )
+            else -> emptyList()
+        }
+
+        return news.filter { item ->
+            val content = (item.title + " " + item.description).lowercase()
+            includeKeywords.any { content.contains(it) }
+        }
+    }
+
+    private suspend fun fetchCategoryNews(sources: Map<String, String>, limit: Int = 20): List<NewsItem> = coroutineScope {
         try {
             // Fetch all feeds in parallel
             val deferreds = sources.map { (name, url) ->
@@ -107,7 +154,6 @@ class NewsRepository {
                         feed.channel?.items?.map { item ->
                             item.apply { 
                                 sourceName = name 
-                                // Prioritize enclosure if it's an image
                                 imageUrl = if (enclosure?.type?.startsWith("image") == true) {
                                     enclosure?.url
                                 } else {
@@ -116,18 +162,17 @@ class NewsRepository {
                             }
                         } ?: emptyList()
                     } catch (e: Exception) {
-                        e.printStackTrace()
                         emptyList<NewsItem>()
                     }
                 }
             }
 
             val allNews = deferreds.awaitAll().flatten()
-            allNews.sortedByDescending { parseDate(it.pubDate) }.take(10)
+            val result = allNews.sortedByDescending { parseDate(it.pubDate) }.take(limit)
+            return@coroutineScope result
 
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+            return@coroutineScope emptyList<NewsItem>()
         }
     }
 
