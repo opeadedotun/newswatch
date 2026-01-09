@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -74,8 +75,11 @@ fun MainScreen(viewModel: NewsViewModel) {
     
     var selectedNewsItem by remember { mutableStateOf<NewsItem?>(null) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var infoDialogType by remember { mutableStateOf(InfoDialogType.ABOUT) }
     var showBookmarks by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
+    
+    val uriHandler = LocalUriHandler.current
     
     // Define tabs
     val tabs = listOf(
@@ -86,7 +90,10 @@ fun MainScreen(viewModel: NewsViewModel) {
     )
 
     if (showInfoDialog) {
-        InfoDialog(onDismiss = { showInfoDialog = false })
+        InfoDialog(
+            type = infoDialogType,
+            onDismiss = { showInfoDialog = false }
+        )
     }
 
     Scaffold(
@@ -137,9 +144,36 @@ fun MainScreen(viewModel: NewsViewModel) {
                                     leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("About") },
+                                    text = { Text("Check for update") },
                                     onClick = {
                                         menuExpanded = false
+                                        uriHandler.openUri("https://upload-apk.com/JtcYNqF7u86gd36")
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Settings, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Privacy Policy") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        infoDialogType = InfoDialogType.PRIVACY_POLICY
+                                        showInfoDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.List, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Open Source License") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        infoDialogType = InfoDialogType.LICENSES
+                                        showInfoDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.List, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("About NewsWatch") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        infoDialogType = InfoDialogType.ABOUT
                                         showInfoDialog = true
                                     },
                                     leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
