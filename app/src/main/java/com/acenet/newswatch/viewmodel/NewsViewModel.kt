@@ -30,6 +30,9 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
     
     private val _uiState = MutableStateFlow<NewsUiState>(NewsUiState.Loading)
     val uiState: StateFlow<NewsUiState> = _uiState.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
     
     private val _selectedCategory = MutableStateFlow(NewsRepository.NewsCategory.WORLD)
     val selectedCategory: StateFlow<NewsRepository.NewsCategory> = _selectedCategory.asStateFlow()
@@ -81,8 +84,11 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun fetchNews() {
+    fun fetchNews(isManual: Boolean = false) {
         viewModelScope.launch {
+            if (isManual) {
+                _isRefreshing.value = true
+            }
             // Only set loading if it's the initial load or a manual forceful refresh that clears content?
             // User experience is better if we keep showing old data while fetching, but for now lets just update state
             if (_uiState.value is NewsUiState.Error || _uiState.value is NewsUiState.Loading) {
@@ -101,6 +107,7 @@ class NewsViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = NewsUiState.Error("Failed to load news. Check internet connection.")
                 }
             }
+            _isRefreshing.value = false
         }
     }
 

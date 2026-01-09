@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -35,6 +37,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -247,7 +250,9 @@ fun MainScreen(viewModel: NewsViewModel) {
                         onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
                         onNewsClick = { selectedNewsItem = it },
                         onBookmarkClick = { viewModel.toggleBookmark(it) },
-                        isBookmarked = { viewModel.isBookmarked(it) }
+                        isBookmarked = { viewModel.isBookmarked(it) },
+                        isRefreshing = viewModel.isRefreshing.collectAsState().value,
+                        onRefresh = { viewModel.fetchNews(isManual = true) }
                     )
                 }
             } else {
@@ -269,8 +274,24 @@ fun NewsListScreen(
     onSearchQueryChange: (String) -> Unit,
     onNewsClick: (NewsItem) -> Unit,
     onBookmarkClick: (NewsItem) -> Unit,
-    isBookmarked: (NewsItem) -> Boolean
+    isBookmarked: (NewsItem) -> Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
 ) {
+    val pullToRefreshState = rememberPullToRefreshState()
+    
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) {
+            pullToRefreshState.endRefresh()
+        }
+    }
+
+    if (pullToRefreshState.isRefreshing) {
+        LaunchedEffect(true) {
+            onRefresh()
+        }
+    }
+
     Column {
         TextField(
             value = searchQuery,
@@ -303,35 +324,42 @@ fun NewsListScreen(
             )
         )
 
-        when (uiState) {
-            is NewsUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PrimaryRed)
+        Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
+            when (uiState) {
+                is NewsUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PrimaryRed)
+                    }
                 }
-            }
-            is NewsUiState.Error -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = uiState.message, color = Color.Red, textAlign = TextAlign.Center)
+                is NewsUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = uiState.message, color = Color.Red, textAlign = TextAlign.Center)
+                        }
+                    }
+                }
+                is NewsUiState.Success -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(news) { newsItem ->
+                            NewsItemCard(
+                                newsItem = newsItem, 
+                                isBookmarked = isBookmarked(newsItem),
+                                onBookmarkClick = { onBookmarkClick(newsItem) },
+                                onClick = { onNewsClick(newsItem) }
+                            )
+                        }
                     }
                 }
             }
-            is NewsUiState.Success -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-                ) {
-                    items(news) { newsItem ->
-                        NewsItemCard(
-                            newsItem = newsItem, 
-                            isBookmarked = isBookmarked(newsItem),
-                            onBookmarkClick = { onBookmarkClick(newsItem) },
-                            onClick = { onNewsClick(newsItem) }
-                        )
-                    }
-                }
-            }
+
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }
