@@ -14,21 +14,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Computer
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +46,8 @@ import com.acenet.newswatch.ui.theme.NewsWatchTheme
 import com.acenet.newswatch.ui.theme.PrimaryRed
 import com.acenet.newswatch.viewmodel.NewsUiState
 import com.acenet.newswatch.viewmodel.NewsViewModel
+
+import android.annotation.SuppressLint
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +67,7 @@ fun NewsApp(viewModel: NewsViewModel = viewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: NewsViewModel) {
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val filteredNews by viewModel.filteredNews.collectAsState(initial = emptyList())
     val selectedCategory by viewModel.selectedCategory.collectAsState()
@@ -86,7 +84,7 @@ fun MainScreen(viewModel: NewsViewModel) {
     
     // Define tabs
     val tabs = listOf(
-        Triple("World News", NewsRepository.NewsCategory.WORLD, Icons.Default.Newspaper),
+        Triple("World News", NewsRepository.NewsCategory.WORLD, Icons.AutoMirrored.Filled.List),
         Triple("Tech News", NewsRepository.NewsCategory.TECH, Icons.Default.Computer),
         Triple("Entertainment", NewsRepository.NewsCategory.ENTERTAINMENT, Icons.Default.PlayArrow),
         Triple("Sports News", NewsRepository.NewsCategory.SPORT, Icons.Default.SportsSoccer)
@@ -104,7 +102,7 @@ fun MainScreen(viewModel: NewsViewModel) {
             if (selectedNewsItem == null) {
                 CenterAlignedTopAppBar(
                     title = {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Image(
                                 painter = painterResource(id = R.drawable.ic_launcher),
                                 contentDescription = "Logo",
@@ -116,7 +114,7 @@ fun MainScreen(viewModel: NewsViewModel) {
                             Text(
                                 text = "All the headlines. One place",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (viewModel.isDarkMode.value) Color.White else Color.Black,
+                                color = if (isDarkMode) Color.White else Color.Black,
                                 modifier = Modifier.padding(bottom = 4.dp)
                             )
                         }
@@ -131,6 +129,14 @@ fun MainScreen(viewModel: NewsViewModel) {
                                 onDismissRequest = { menuExpanded = false }
                             ) {
                                 DropdownMenuItem(
+                                    text = { Text("Refresh") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        viewModel.fetchNews(isManual = true)
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) }
+                                )
+                                DropdownMenuItem(
                                     text = { Text("Bookmarks") },
                                     onClick = {
                                         menuExpanded = false
@@ -139,7 +145,7 @@ fun MainScreen(viewModel: NewsViewModel) {
                                     leadingIcon = { Icon(Icons.Default.Star, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text(if (viewModel.isDarkMode.value) "Light Mode" else "Dark Mode") },
+                                    text = { Text(if (isDarkMode) "Light Mode" else "Dark Mode") },
                                     onClick = {
                                         menuExpanded = false
                                         viewModel.toggleTheme()
@@ -161,7 +167,7 @@ fun MainScreen(viewModel: NewsViewModel) {
                                         infoDialogType = InfoDialogType.PRIVACY_POLICY
                                         showInfoDialog = true
                                     },
-                                    leadingIcon = { Icon(Icons.Default.List, contentDescription = null) }
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Open Source License") },
@@ -170,7 +176,7 @@ fun MainScreen(viewModel: NewsViewModel) {
                                         infoDialogType = InfoDialogType.LICENSES
                                         showInfoDialog = true
                                     },
-                                    leadingIcon = { Icon(Icons.Default.List, contentDescription = null) }
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("About NewsWatch") },
@@ -250,9 +256,7 @@ fun MainScreen(viewModel: NewsViewModel) {
                         onSearchQueryChange = { viewModel.onSearchQueryChanged(it) },
                         onNewsClick = { selectedNewsItem = it },
                         onBookmarkClick = { viewModel.toggleBookmark(it) },
-                        isBookmarked = { viewModel.isBookmarked(it) },
-                        isRefreshing = viewModel.isRefreshing.collectAsState().value,
-                        onRefresh = { viewModel.fetchNews(isManual = true) }
+                        isBookmarked = { viewModel.isBookmarked(it) }
                     )
                 }
             } else {
@@ -265,7 +269,6 @@ fun MainScreen(viewModel: NewsViewModel) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewsListScreen(
     uiState: NewsUiState,
@@ -274,24 +277,8 @@ fun NewsListScreen(
     onSearchQueryChange: (String) -> Unit,
     onNewsClick: (NewsItem) -> Unit,
     onBookmarkClick: (NewsItem) -> Unit,
-    isBookmarked: (NewsItem) -> Boolean,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    isBookmarked: (NewsItem) -> Boolean
 ) {
-    val pullToRefreshState = rememberPullToRefreshState()
-    
-    LaunchedEffect(isRefreshing) {
-        if (!isRefreshing) {
-            pullToRefreshState.endRefresh()
-        }
-    }
-
-    if (pullToRefreshState.isRefreshing) {
-        LaunchedEffect(true) {
-            onRefresh()
-        }
-    }
-
     Column {
         TextField(
             value = searchQuery,
@@ -317,14 +304,15 @@ fun NewsListScreen(
             singleLine = true,
             shape = RoundedCornerShape(25.dp),
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-            colors = TextFieldDefaults.textFieldColors(
+            colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             )
         )
 
-        Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             when (uiState) {
                 is NewsUiState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -355,11 +343,6 @@ fun NewsListScreen(
                     }
                 }
             }
-
-            PullToRefreshContainer(
-                state = pullToRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
         }
     }
 }
@@ -377,33 +360,46 @@ fun NewsItemCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = newsItem.title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
+        Column {
+            newsItem.imageUrl?.let { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentScale = ContentScale.Crop
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = newsItem.sourceName, style = MaterialTheme.typography.labelSmall, color = PrimaryRed)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "• ${parseDateForDisplay(newsItem.pubDate)}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                }
             }
-            IconButton(onClick = onBookmarkClick, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    imageVector = if (isBookmarked) Icons.Default.Star else Icons.Default.StarBorder,
-                    contentDescription = "Bookmark",
-                    tint = if (isBookmarked) Color.Yellow else Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = newsItem.title,
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = newsItem.sourceName, style = MaterialTheme.typography.labelSmall, color = PrimaryRed)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "• ${parseDateForDisplay(newsItem.pubDate)}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    }
+                }
+                IconButton(onClick = onBookmarkClick, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        imageVector = if (isBookmarked) Icons.Default.Star else Icons.Default.StarBorder,
+                        contentDescription = "Bookmark",
+                        tint = if (isBookmarked) Color.Yellow else Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
 }
 
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun NewsDetailScreen(newsItem: NewsItem, onBack: () -> Unit) {
     BackHandler { onBack() }
@@ -430,8 +426,8 @@ fun NewsDetailScreen(newsItem: NewsItem, onBack: () -> Unit) {
 
 fun parseDateForDisplay(dateString: String): String {
     return try {
-        if (dateString.length > 22) dateString.substring(0, 22) else dateString
-    } catch (e: Exception) {
+        if (dateString.length > 22) dateString.take(22) else dateString
+    } catch (_: Exception) {
         dateString
     }
 }

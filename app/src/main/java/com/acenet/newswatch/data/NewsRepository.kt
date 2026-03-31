@@ -154,10 +154,15 @@ class NewsRepository {
                         feed.channel?.items?.map { item ->
                             item.apply { 
                                 sourceName = name 
-                                imageUrl = if (enclosure?.type?.startsWith("image") == true) {
-                                    enclosure?.url
-                                } else {
-                                    extractImage(description)
+                                // Prioritize enclosure if it's an image
+                                val enclosureUrl = if (enclosure?.type?.startsWith("image") == true) enclosure?.url else null
+                                val extractedUrl = extractImage(description) ?: extractImage(item.title)
+                                
+                                imageUrl = when {
+                                    enclosureUrl != null && !isLogoUrl(enclosureUrl) -> enclosureUrl
+                                    extractedUrl != null && !isLogoUrl(extractedUrl) -> extractedUrl
+                                    enclosureUrl != null -> enclosureUrl // Fallback even if it looks like a logo
+                                    else -> extractedUrl
                                 }
                             }
                         } ?: emptyList()
@@ -194,9 +199,20 @@ class NewsRepository {
         return Date(0)
     }
 
-    private fun extractImage(description: String): String? {
+    private fun extractImage(text: String): String? {
         val regex = "src\\s*=\\s*['\"]([^'\"]+)['\"]".toRegex()
-        val matchResult = regex.find(description)
+        val matchResult = regex.find(text)
         return matchResult?.groupValues?.get(1)
+    }
+
+    private fun isLogoUrl(url: String): Boolean {
+        val logoKeywords = listOf(
+            "logo", "icon", "placeholder", "header", "square", 
+            "punchng-logo", "vanguard-logo", "guardian-logo", 
+            "premiumtimes-logo", "dailypost-logo", "tribune-logo",
+            "default", "brand", "avatar", "social", "facebook", "twitter"
+        )
+        val lowercaseUrl = url.lowercase()
+        return logoKeywords.any { lowercaseUrl.contains(it) }
     }
 }
